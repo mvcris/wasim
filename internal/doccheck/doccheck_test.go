@@ -34,25 +34,34 @@ func TestGodoc(t *testing.T) {
 	}
 }
 
+// checkDirectory parses the non-test files of one directory. It reads them one
+// by one because parser.ParseDir is deprecated; build tags do not matter here,
+// since every file must be documented whatever platform it builds on.
 func checkDirectory(t *testing.T, dir string) {
 	t.Helper()
-	files := token.NewFileSet()
-	packages, err := parser.ParseDir(files, dir, func(info os.FileInfo) bool {
-		return !strings.HasSuffix(info.Name(), "_test.go")
-	}, parser.ParseComments)
+	entries, err := os.ReadDir(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, pkg := range packages {
-		documented := false
-		for _, file := range pkg.Files {
-			documented = documented || file.Doc != nil
-			for _, decl := range file.Decls {
-				checkDeclaration(t, files, decl)
-			}
+	files := token.NewFileSet()
+	documented := map[string]bool{}
+	for _, entry := range entries {
+		name := entry.Name()
+		if entry.IsDir() || !strings.HasSuffix(name, ".go") || strings.HasSuffix(name, "_test.go") {
+			continue
 		}
-		if !documented {
-			t.Errorf("%s: package %s has no package comment", dir, pkg.Name)
+		file, err := parser.ParseFile(files, filepath.Join(dir, name), nil, parser.ParseComments)
+		if err != nil {
+			t.Fatal(err)
+		}
+		documented[file.Name.Name] = documented[file.Name.Name] || file.Doc != nil
+		for _, decl := range file.Decls {
+			checkDeclaration(t, files, decl)
+		}
+	}
+	for pkg, ok := range documented {
+		if !ok {
+			t.Errorf("%s: package %s has no package comment", dir, pkg)
 		}
 	}
 }

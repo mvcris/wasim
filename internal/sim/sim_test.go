@@ -148,7 +148,10 @@ func inboundOf(t *testing.T, delivery domain.Delivery) webhook.Value {
 	return envelope.Entry[0].Changes[0].Value
 }
 
-func wantAPIError(t *testing.T, err error, code int) *cloudapi.APIError {
+// apiErrorOf returns err as a Graph error with the given code, failing the
+// test otherwise. Its result is a plain struct pointer, not an error, so a
+// caller that only asserts can ignore it.
+func apiErrorOf(t *testing.T, err error, code int) cloudapi.APIError {
 	t.Helper()
 	var apiErr *cloudapi.APIError
 	if !errors.As(err, &apiErr) {
@@ -157,7 +160,12 @@ func wantAPIError(t *testing.T, err error, code int) *cloudapi.APIError {
 	if apiErr.Definition.Code != code {
 		t.Fatalf("code = %d, want %d (%s)", apiErr.Definition.Code, code, apiErr.Definition.Details)
 	}
-	return apiErr
+	return *apiErr
+}
+
+func wantAPIError(t *testing.T, err error, code int) {
+	t.Helper()
+	apiErrorOf(t, err, code)
 }
 
 func wantInvalid(t *testing.T, err error) {

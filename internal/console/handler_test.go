@@ -409,7 +409,7 @@ func TestEventsStreamSignalsChanges(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	response, err := http.DefaultClient.Do(request)
+	response, err := http.DefaultClient.Do(request) //nolint:bodyclose // a goroutine reads the body, the defer below closes it
 	if err != nil {
 		t.Fatal(err)
 	}

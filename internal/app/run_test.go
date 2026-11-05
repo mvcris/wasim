@@ -80,6 +80,20 @@ func startApp(t *testing.T, cfg config.Config, logs *logBuffer) (context.CancelF
 	return cancel, done
 }
 
+// stop cancels a running app and requires a clean shutdown.
+func stop(t *testing.T, cancel context.CancelFunc, done <-chan error) {
+	t.Helper()
+	cancel()
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Errorf("Run returned %v", err)
+		}
+	case <-time.After(10 * time.Second):
+		t.Fatal("Run did not return after cancel")
+	}
+}
+
 var addrPattern = regexp.MustCompile(`graph=(\S+) console=(\S+)`)
 
 func TestRunServesBothPortsAndStopsOnCancel(t *testing.T) {
@@ -129,15 +143,13 @@ func TestRunWarnsAboutAMissingWebhookSetup(t *testing.T) {
 		logs := &logBuffer{}
 		cancel, done := startApp(t, runConfig(t, nil), logs)
 		logs.waitFor(t, "webhooks are recorded but not sent")
-		cancel()
-		<-done
+		stop(t, cancel, done)
 	})
 	t.Run("no app secret", func(t *testing.T) {
 		logs := &logBuffer{}
 		cancel, done := startApp(t, runConfig(t, func(cfg *config.Config) { cfg.WebhookURL = "http://127.0.0.1:1/webhook" }), logs)
 		logs.waitFor(t, "webhooks go out unsigned")
-		cancel()
-		<-done
+		stop(t, cancel, done)
 	})
 }
 
@@ -179,16 +191,14 @@ func TestVerifyOnStart(t *testing.T) {
 	}), logs)
 
 	logs.waitFor(t, "webhook verified")
-	cancel()
-	<-done
+	stop(t, cancel, done)
 }
 
 func TestVerifyOnStartWithoutAURLIsSkipped(t *testing.T) {
 	logs := &logBuffer{}
 	cancel, done := startApp(t, runConfig(t, func(cfg *config.Config) { cfg.VerifyOnStart = true }), logs)
 	logs.waitFor(t, "webhook verification skipped")
-	cancel()
-	<-done
+	stop(t, cancel, done)
 }
 
 func TestNewFailsOnABadSeed(t *testing.T) {

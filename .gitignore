@@ -1,0 +1,25 @@
+# Binaries
+/wasim
+/bin/
+/dist/
+
+# Runtime state
+*.db
+*.db-shm
+*.db-wal
+/wasim-media/
+
+# Test and coverage output
+*.test
+*.out
+coverage.html
+
+# Local configuration
+.env
+.env.*
+!.env.example
+
+# Editors and OS
+.idea/
+.vscode/
+.DS_Store

@@ -1,0 +1,17 @@
+{
+  "name": "wasim-e2e",
+  "private": true,
+  "description": "Browser end-to-end tests for the wasim console",
+  "type": "module",
+  "scripts": {
+    "test": "playwright test --project=e2e",
+    "screenshots": "playwright test --project=screenshots",
+    "typecheck": "tsc"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.0",
+    "@types/node": "24.19.2",
+    "typescript": "5.9.3"
+  },
+  "packageManager": "pnpm@10.20.0"
+}

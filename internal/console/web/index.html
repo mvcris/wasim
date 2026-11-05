@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>wasim console</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <strong>wasim</strong>
+        <span class="muted" id="version"></span>
+      </div>
+      <div class="account muted" id="account"></div>
+      <div class="topbar-actions">
+        <span class="connection" id="connection" title="Live updates from the server">offline</span>
+        <button type="button" id="verify-webhook">Verify webhook</button>
+        <button type="button" id="reset" class="danger">Reset</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="pane contacts" aria-label="Contacts">
+        <h2>Users</h2>
+        <form id="contact-form" class="stack">
+          <input id="contact-phone" placeholder="Phone, digits with country code" required inputmode="tel" aria-label="Phone number" />
+          <input id="contact-name" placeholder="Profile name" aria-label="Profile name" />
+          <button type="submit">Add user</button>
+        </form>
+        <ul id="contact-list" class="contact-list"></ul>
+      </aside>
+
+      <section class="pane chat" aria-label="Conversation">
+        <div class="chat-header" id="chat-header"></div>
+        <div class="messages" id="messages" aria-live="polite"></div>
+        <form id="composer" class="composer" hidden>
+          <div class="quote-preview" id="quote-preview" hidden></div>
+          <div class="composer-row">
+            <label class="attach" title="Attach an image or document">
+              <span aria-hidden="true">+</span>
+              <span class="visually-hidden">Attach a file</span>
+              <input type="file" id="attachment" hidden />
+            </label>
+            <input id="composer-text" placeholder="Type as this user" autocomplete="off" aria-label="Message text" />
+            <input id="composer-hours" class="hours" type="number" min="0" step="1" placeholder="h ago" title="Back-date this text message by this many hours" aria-label="Hours ago" />
+            <button type="submit" class="primary">Send</button>
+          </div>
+          <div class="attachment-name muted" id="attachment-name" hidden></div>
+        </form>
+      </section>
+
+      <aside class="pane inspector" aria-label="Inspector">
+        <div class="tabs" role="tablist">
+          <button type="button" role="tab" data-tab="webhooks" aria-selected="true">Webhooks</button>
+          <button type="button" role="tab" data-tab="failures" aria-selected="false">Failures</button>
+          <button type="button" role="tab" data-tab="setup" aria-selected="false">Setup</button>
+        </div>
+
+        <div class="tab-panel" data-panel="webhooks">
+          <ul id="delivery-list" class="delivery-list"></ul>
+        </div>
+
+        <div class="tab-panel" data-panel="failures" hidden>
+          <form id="failure-form" class="stack">
+            <p class="muted small">The next sends matching this rule fail. It takes priority over the 24h window check.</p>
+            <label for="failure-scope">Applies to</label>
+            <select id="failure-scope">
+              <option value="contact">Selected user</option>
+              <option value="all">Every user</option>
+            </select>
+            <label for="failure-code">Error</label>
+            <select id="failure-code"></select>
+            <label for="failure-channel">Arrives as</label>
+            <select id="failure-channel">
+              <option value="">Default for this code</option>
+              <option value="async">HTTP 200, then a failed webhook</option>
+              <option value="sync">HTTP error on the send</option>
+            </select>
+            <label for="failure-times">How many sends</label>
+            <input id="failure-times" type="number" min="-1" value="1" aria-describedby="failure-times-hint" />
+            <span id="failure-times-hint" class="muted small">-1 keeps failing until removed</span>
+            <button type="submit" class="primary">Add rule</button>
+          </form>
+          <h3>Active rules</h3>
+          <ul id="rule-list" class="rule-list"></ul>
+        </div>
+
+        <div class="tab-panel" data-panel="setup" hidden>
+          <p class="muted small">Point your WhatsApp client at these values. wasim never contacts Meta.</p>
+          <pre id="setup-values" class="code"></pre>
+          <p class="muted small">The webhook secret and verify token are the values wasim was started with.</p>
+        </div>
+      </aside>
+    </main>
+
+    <div class="toast" id="toast" role="status" hidden></div>
+    <script src="app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,12 @@
+.git
+.github
+bin
+dist
+docs
+examples
+*.db
+*.db-shm
+*.db-wal
+wasim-media
+*.md
+e2e

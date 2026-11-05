@@ -1,0 +1,37 @@
+name: Behaves differently from Meta
+description: wasim answers or sends something the real Cloud API does not.
+labels: [compatibility]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks! Real traffic is the most valuable thing you can share. Remove phone
+        numbers, names, tokens, secrets and message content before posting.
+  - type: textarea
+    id: request
+    attributes:
+      label: What your app sent, or what the user did
+      description: The request body or the console action.
+      render: json
+    validations:
+      required: true
+  - type: textarea
+    id: wasim
+    attributes:
+      label: What wasim answered or sent
+      render: json
+    validations:
+      required: true
+  - type: textarea
+    id: meta
+    attributes:
+      label: What the real Cloud API answers or sends
+      description: Captured traffic if you have it, otherwise a link to the Meta documentation.
+      render: json
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Graph API version and wasim version
+      placeholder: v23.0, wasim v0.1.0

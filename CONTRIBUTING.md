@@ -65,4 +65,7 @@ Add a line to `CHANGELOG.md` under Unreleased.
 
 Maintainers tag `vMAJOR.MINOR.PATCH` on `main`. The release workflow runs the
 tests, attaches binaries for Linux, macOS and Windows with checksums, and pushes
-a multi-architecture image to `ghcr.io`.
+a multi-architecture image to Docker Hub (`realmvcris/wasim`) and `ghcr.io`. The
+repository needs the `DOCKERHUB_USERNAME` variable and the `DOCKERHUB_TOKEN`
+secret, a Docker Hub personal access token with Read, Write and Delete access
+(the description update needs Delete).

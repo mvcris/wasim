@@ -3,6 +3,7 @@
 [![CI](https://github.com/mvcris/wasim/actions/workflows/ci.yml/badge.svg)](https://github.com/mvcris/wasim/actions/workflows/ci.yml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/mvcris/wasim.svg)](https://pkg.go.dev/github.com/mvcris/wasim/cmd/wasim)
 [![Go Report Card](https://goreportcard.com/badge/github.com/mvcris/wasim)](https://goreportcard.com/report/github.com/mvcris/wasim)
+[![Docker Hub](https://img.shields.io/docker/v/realmvcris/wasim?label=docker%20hub&sort=semver)](https://hub.docker.com/r/realmvcris/wasim)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 A local emulator of the WhatsApp Cloud API. Test your integration end to end with
@@ -52,8 +53,10 @@ go install github.com/mvcris/wasim/cmd/wasim@latest
 docker run --rm -p 127.0.0.1:7070:7070 -p 127.0.0.1:7071:7071 \
   -e WASIM_WEBHOOK_URL=http://host.docker.internal:3000/webhook \
   --add-host host.docker.internal:host-gateway \
-  ghcr.io/mvcris/wasim:latest
+  realmvcris/wasim:latest
 ```
+
+The same image is on GitHub's registry as `ghcr.io/mvcris/wasim`.
 
 Prebuilt binaries for Linux, macOS and Windows are attached to each
 [release](https://github.com/mvcris/wasim/releases).

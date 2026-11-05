@@ -12,6 +12,10 @@ updates:
     directory: /e2e
     schedule:
       interval: monthly
+    ignore:
+      # Types must match the Node version CI runs, not the newest one.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     groups:
       e2e:
         patterns: ["*"]

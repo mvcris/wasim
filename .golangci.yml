@@ -24,6 +24,11 @@ linters:
           - gosec
           - revive
 
+issues:
+  # Report every finding: the default cap of 3 per linter hides the rest.
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
 formatters:
   enable:
     - gofmt

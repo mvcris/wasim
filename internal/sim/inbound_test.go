@@ -330,7 +330,7 @@ func TestResolveMedia(t *testing.T) {
 	}
 
 	_, err = f.service.ResolveMedia(ctx, "999")
-	if apiErr := wantAPIError(t, err, cloudapi.CodeInvalidParameter); apiErr.Subcode != 33 {
+	if apiErr := apiErrorOf(t, err, cloudapi.CodeInvalidParameter); apiErr.Subcode != 33 {
 		t.Errorf("subcode = %d, want 33", apiErr.Subcode)
 	}
 }

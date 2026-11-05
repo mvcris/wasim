@@ -1,0 +1,55 @@
+{
+  "templates": [
+    {
+      "name": "hello_world",
+      "language": "en_US",
+      "category": "UTILITY",
+      "components": [
+        { "type": "HEADER", "format": "TEXT", "text": "Hello World" },
+        { "type": "BODY", "text": "Welcome and congratulations! This message demonstrates sending a template without parameters." },
+        { "type": "FOOTER", "text": "Sent by wasim" }
+      ]
+    },
+    {
+      "name": "order_confirmation",
+      "language": "en_US",
+      "category": "UTILITY",
+      "parameter_format": "POSITIONAL",
+      "components": [
+        {
+          "type": "BODY",
+          "text": "Hi {{1}}, your order {{2}} is confirmed.",
+          "example": { "body_text": [["Jessica", "SKBUP2-4CPIG9"]] }
+        },
+        {
+          "type": "BUTTONS",
+          "buttons": [
+            { "type": "QUICK_REPLY", "text": "Track order" },
+            { "type": "QUICK_REPLY", "text": "Cancel order" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "appointment_reminder",
+      "language": "en_US",
+      "category": "MARKETING",
+      "parameter_format": "NAMED",
+      "components": [
+        { "type": "BODY", "text": "Hi {{first_name}}, your appointment is on {{date}}." },
+        { "type": "FOOTER", "text": "Reply STOP to opt out" },
+        {
+          "type": "BUTTONS",
+          "buttons": [
+            { "type": "QUICK_REPLY", "text": "Confirm" },
+            { "type": "URL", "text": "Reschedule", "url": "https://example.com/reschedule" }
+          ]
+        }
+      ]
+    }
+  ],
+  "contacts": [
+    { "wa_id": "15550000001", "name": "Ana Lima" },
+    { "wa_id": "15550000002", "name": "Bruno Costa" }
+  ]
+}

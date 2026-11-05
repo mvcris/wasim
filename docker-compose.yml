@@ -1,0 +1,21 @@
+# Runs wasim next to an app on the host machine. Ports stay on localhost because
+# the console has no authentication.
+services:
+  wasim:
+    build: .
+    ports:
+      - "127.0.0.1:7070:7070"
+      - "127.0.0.1:7071:7071"
+    environment:
+      WASIM_PUBLIC_URL: ${WASIM_PUBLIC_URL:-http://localhost:7070}
+      WASIM_WEBHOOK_URL: ${WASIM_WEBHOOK_URL:-http://host.docker.internal:3000/webhook}
+      WASIM_APP_SECRET: ${WASIM_APP_SECRET:-local-app-secret}
+      WASIM_VERIFY_TOKEN: ${WASIM_VERIFY_TOKEN:-local-verify-token}
+      WASIM_SEED_FILE: ${WASIM_SEED_FILE:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - wasim_data:/data
+
+volumes:
+  wasim_data:

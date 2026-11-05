@@ -1,0 +1,34 @@
+name: Bug
+description: wasim crashes, hangs, or does not do what its documentation says.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Requests, console actions and configuration. Remove secrets.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Output of wasim with WASIM_LOG_LEVEL=debug, if relevant.
+      render: text
+  - type: input
+    id: version
+    attributes:
+      label: wasim version and how you run it
+      placeholder: v0.1.0, Docker on macOS

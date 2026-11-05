@@ -1,0 +1,29 @@
+version: "2"
+
+linters:
+  enable:
+    - bodyclose
+    - errorlint
+    - gocritic
+    - gosec
+    - misspell
+    - revive
+    - unconvert
+  settings:
+    gosec:
+      excludes:
+        # Local paths come from the operator's own configuration.
+        - G304
+  exclusions:
+    presets:
+      - comments
+      - std-error-handling
+    rules:
+      - path: _test\.go
+        linters:
+          - gosec
+          - revive
+
+formatters:
+  enable:
+    - gofmt

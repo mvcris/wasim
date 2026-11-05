@@ -1,0 +1,21 @@
+name: Feature request
+description: Emulate something wasim does not cover yet.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What should wasim emulate
+      description: Check docs/compatibility.md first, it may already be listed as a known gap.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: What it would let you test
+    validations:
+      required: true
+  - type: textarea
+    id: source
+    attributes:
+      label: Meta documentation or captured traffic

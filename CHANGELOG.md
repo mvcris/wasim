@@ -6,6 +6,8 @@ Notable changes are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-05
+
 ### Added
 
 - Fake Graph API: text, interactive button and list, and template sends, mark as
@@ -30,3 +32,6 @@ Notable changes are recorded here. The format follows
   the simulator's clock.
 - The failure rule form labels its fields explicitly and resets after a rule is
   added.
+
+[Unreleased]: https://github.com/mvcris/wasim/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/mvcris/wasim/releases/tag/v0.1.0

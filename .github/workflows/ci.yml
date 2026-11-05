@@ -47,7 +47,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v5
         with:
           package_json_file: e2e/package.json
       - uses: actions/setup-node@v4

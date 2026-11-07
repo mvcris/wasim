@@ -2,8 +2,12 @@
 
 wasim is a development tool. It is not designed to face the internet.
 
-- **The console has no authentication.** Anyone who reaches its port can read all
-  conversations and drive the simulator. Keep it on localhost or a private network.
+- **The console is open until you add a user.** Without users, anyone who reaches
+  its port can read all conversations and drive the simulator. Add one with
+  `wasim user add EMAIL` to require a login. Even then, keep it on localhost or a
+  private network: the login protects test data from casual access, and the
+  console serves plain HTTP, so put it behind TLS if it crosses a network you do
+  not trust.
 - **Do not use real credentials.** wasim never contacts Meta and needs no real app
   secret or access token. Use throwaway values.
 - **Do not store real personal data.** Conversations and media are stored unencrypted

@@ -1,5 +1,6 @@
 # Runs wasim next to an app on the host machine. Ports stay on localhost because
-# the console has no authentication.
+# the console stays open until a user is added with
+# `docker compose exec wasim /wasim user add EMAIL`.
 services:
   wasim:
     build: .

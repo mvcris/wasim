@@ -1,5 +1,6 @@
 // Package console serves the control API and the browser UI used to play the
-// WhatsApp user. It has no authentication, so it must stay on a trusted network.
+// WhatsApp user. Once a console user exists, every request needs a login: a
+// session cookie from the login page, or HTTP Basic credentials from a script.
 package console
 
 import (
@@ -15,6 +16,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/mvcris/wasim/internal/auth"
 	"github.com/mvcris/wasim/internal/cloudapi"
 	"github.com/mvcris/wasim/internal/domain"
 	"github.com/mvcris/wasim/internal/events"
@@ -37,18 +39,23 @@ var webFiles embed.FS
 type Handler struct {
 	service *sim.Service
 	broker  *events.Broker
+	guard   *auth.Guard
+	static  fs.FS
 	logger  *slog.Logger
 	version string
 }
 
 // New returns the console handler.
-func New(service *sim.Service, broker *events.Broker, version string, logger *slog.Logger) (http.Handler, error) {
+func New(service *sim.Service, broker *events.Broker, guard *auth.Guard, version string, logger *slog.Logger) (http.Handler, error) {
 	static, err := fs.Sub(webFiles, "web")
 	if err != nil {
 		return nil, fmt.Errorf("load console assets: %w", err)
 	}
-	handler := &Handler{service: service, broker: broker, logger: logger, version: version}
+	handler := &Handler{service: service, broker: broker, guard: guard, static: static, logger: logger, version: version}
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /login", handler.loginPage)
+	mux.HandleFunc("POST /api/login", handler.login)
+	mux.HandleFunc("POST /api/logout", handler.logout)
 	mux.HandleFunc("GET /api/info", handler.info)
 	mux.HandleFunc("GET /api/events", handler.streamEvents)
 	mux.HandleFunc("GET /api/contacts", handler.listContacts)
@@ -67,12 +74,12 @@ func New(service *sim.Service, broker *events.Broker, version string, logger *sl
 	mux.HandleFunc("POST /api/webhook/verify", handler.verifyWebhook)
 	mux.HandleFunc("POST /api/reset", handler.reset)
 	mux.Handle("GET /", http.FileServerFS(static))
-	return sameOriginOnly(mux), nil
+	return sameOriginOnly(handler.requireLogin(mux)), nil
 }
 
 // sameOriginOnly stops a website open in the developer's browser from driving
-// this unauthenticated API: multipart forms are "simple" requests that skip
-// CORS preflight, so the browser would otherwise send them.
+// the API, which is often open to anyone: multipart forms are "simple" requests
+// that skip CORS preflight, so the browser would otherwise send them.
 func sameOriginOnly(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if origin := r.Header.Get("Origin"); origin != "" && r.Method != http.MethodGet {
@@ -95,10 +102,17 @@ type infoResponse struct {
 	GraphURL           string                 `json:"graph_url"`
 	EnforceWindow      bool                   `json:"enforce_window"`
 	AutoStatuses       []domain.MessageStatus `json:"auto_statuses"`
+	// User is the account logged in through the login page, which the page
+	// offers to log out of. Basic credentials and an open console leave it empty.
+	User string `json:"user,omitempty"`
 }
 
-func (h *Handler) info(w http.ResponseWriter, _ *http.Request) {
+func (h *Handler) info(w http.ResponseWriter, r *http.Request) {
 	config := h.service.Config()
+	var user string
+	if access, ok := r.Context().Value(accessKey{}).(auth.Access); ok && access.ViaSession {
+		user = access.Email
+	}
 	writeJSON(w, http.StatusOK, infoResponse{
 		Version:            h.version,
 		BusinessAccountID:  config.Account.BusinessAccountID,
@@ -108,6 +122,7 @@ func (h *Handler) info(w http.ResponseWriter, _ *http.Request) {
 		GraphURL:           config.PublicURL,
 		EnforceWindow:      config.EnforceWindow,
 		AutoStatuses:       config.AutoStatuses,
+		User:               user,
 	})
 }
 

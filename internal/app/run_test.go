@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
@@ -15,6 +16,7 @@ import (
 	"time"
 
 	"github.com/mvcris/wasim/internal/app"
+	"github.com/mvcris/wasim/internal/auth"
 	"github.com/mvcris/wasim/internal/config"
 	"github.com/mvcris/wasim/internal/store"
 )
@@ -213,4 +215,52 @@ func TestNewFailsOnAnUnusableDatabase(t *testing.T) {
 	if _, err := app.New(context.Background(), cfg, "test", slog.New(slog.DiscardHandler)); err == nil {
 		t.Fatal("New accepted a database in a directory that does not exist")
 	}
+}
+
+// A user added by `wasim user add`, a separate process with its own connection
+// to the file, protects a console that is already running.
+func TestAUserAddedWhileRunningLocksTheConsole(t *testing.T) {
+	ctx := context.Background()
+	dbPath := filepath.Join(t.TempDir(), "wasim.db")
+	logs := &logBuffer{}
+	cancel, done := startApp(t, runConfig(t, func(cfg *config.Config) { cfg.DatabasePath = dbPath }), logs)
+	running := logs.waitFor(t, "wasim is running")
+	if !strings.Contains(running, `console_login="off (no users)"`) {
+		t.Errorf("startup log does not say the console is open: %s", running)
+	}
+	consoleURL := "http://" + addrPattern.FindStringSubmatch(running)[2]
+
+	status := func(request *http.Request) int {
+		t.Helper()
+		response, err := http.DefaultClient.Do(request)
+		if err != nil {
+			t.Fatal(err)
+		}
+		response.Body.Close()
+		return response.StatusCode
+	}
+	anonymous, _ := http.NewRequest(http.MethodGet, consoleURL+"/api/contacts", nil)
+	if got := status(anonymous); got != http.StatusOK {
+		t.Fatalf("before any user: HTTP %d", got)
+	}
+
+	other, err := store.Open(ctx, dbPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := auth.NewUsers(other).Add(ctx, "ana@example.com", "correct horse"); err != nil {
+		t.Fatal(err)
+	}
+	_ = other.Close()
+
+	anonymous, _ = http.NewRequest(http.MethodGet, consoleURL+"/api/contacts", nil)
+	if got := status(anonymous); got != http.StatusUnauthorized {
+		t.Errorf("after adding a user: HTTP %d", got)
+	}
+	authorized, _ := http.NewRequest(http.MethodGet, consoleURL+"/api/contacts", nil)
+	authorized.SetBasicAuth("ana@example.com", "correct horse")
+	if got := status(authorized); got != http.StatusOK {
+		t.Errorf("with credentials: HTTP %d", got)
+	}
+	stop(t, cancel, done)
 }

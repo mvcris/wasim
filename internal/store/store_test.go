@@ -384,3 +384,44 @@ func TestCursorRoundTrip(t *testing.T) {
 		t.Error("a malformed cursor was accepted")
 	}
 }
+
+func TestUsers(t *testing.T) {
+	ctx := context.Background()
+	database := openMemory(t)
+	now := time.Now()
+	user := store.User{Email: "ana@example.com", PasswordHash: "hash", CreatedAt: now, UpdatedAt: now}
+	if err := database.InsertUser(ctx, user); err != nil {
+		t.Fatal(err)
+	}
+	if err := database.InsertUser(ctx, user); !errors.Is(err, store.ErrUserExists) {
+		t.Errorf("duplicate: %v", err)
+	}
+	if err := database.UpdateUserPassword(ctx, user.Email, "new hash", now); err != nil {
+		t.Fatal(err)
+	}
+	got, err := database.GetUser(ctx, user.Email)
+	if err != nil || got.PasswordHash != "new hash" {
+		t.Errorf("user = %+v, %v", got, err)
+	}
+
+	// Reset clears activity, not the people allowed to see it.
+	if _, err := database.Reset(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if count, err := database.CountUsers(ctx); err != nil || count != 1 {
+		t.Errorf("after reset: %d users, %v", count, err)
+	}
+
+	if err := database.DeleteUser(ctx, user.Email); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := database.GetUser(ctx, user.Email); !errors.Is(err, domain.ErrNotFound) {
+		t.Errorf("deleted user: %v", err)
+	}
+	if err := database.DeleteUser(ctx, user.Email); !errors.Is(err, domain.ErrNotFound) {
+		t.Errorf("delete twice: %v", err)
+	}
+	if err := database.UpdateUserPassword(ctx, user.Email, "x", now); !errors.Is(err, domain.ErrNotFound) {
+		t.Errorf("update missing: %v", err)
+	}
+}

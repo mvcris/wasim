@@ -19,13 +19,16 @@ import (
 var version = "dev"
 
 func main() {
-	if err := run(os.Args[1:], os.Stdout, os.Stderr); err != nil {
+	if err := run(os.Args[1:], os.Stdin, os.Stdout, os.Stderr); err != nil {
 		fmt.Fprintln(os.Stderr, "wasim:", err)
 		os.Exit(1)
 	}
 }
 
-func run(args []string, stdout, stderr io.Writer) error {
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
+	if len(args) > 0 && args[0] == "user" {
+		return runUser(context.Background(), args[1:], newTerminal(stdin, stdout, stderr, os.Getenv))
+	}
 	cfg, err := config.Load(args, os.Getenv, stderr)
 	if errors.Is(err, flag.ErrHelp) {
 		return nil

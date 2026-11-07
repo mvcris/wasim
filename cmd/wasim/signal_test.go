@@ -38,7 +38,7 @@ func TestRunsUntilInterrupted(t *testing.T) {
 	var stderr syncBuffer
 
 	done := make(chan error, 1)
-	go func() { done <- run(nil, &stdout, &stderr) }()
+	go func() { done <- run(nil, nil, &stdout, &stderr) }()
 
 	deadline := time.Now().Add(5 * time.Second)
 	for !strings.Contains(stderr.String(), "wasim is running") {

@@ -6,6 +6,13 @@ Notable changes are recorded here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Console login. `wasim user add`, `passwd`, `remove` and `list` manage users in
+  the database; once one exists, the console asks for a login and its API
+  accepts HTTP Basic credentials from scripts. Without users the console stays
+  open, as before.
+
 ## [0.1.0] - 2026-11-05
 
 ### Added

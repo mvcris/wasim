@@ -20,6 +20,12 @@ import (
 // empty environment variable means "use the default".
 const noAutoStatuses = "none"
 
+// DefaultDatabasePath is where the SQLite file lives unless configured.
+const DefaultDatabasePath = "./wasim.db"
+
+// DatabasePathEnv is the variable that sets the SQLite file.
+const DatabasePathEnv = "WASIM_DB_PATH"
+
 // Config is the full application configuration.
 type Config struct {
 	GraphAddr   string
@@ -68,7 +74,7 @@ func Load(args []string, getenv func(string) string, output io.Writer) (Config, 
 	source := envSource{getenv: getenv, flags: flags}
 
 	source.str(&config.GraphAddr, "graph-addr", "WASIM_GRAPH_ADDR", "127.0.0.1:7070", "listen address of the fake Graph API")
-	source.str(&config.ConsoleAddr, "console-addr", "WASIM_CONSOLE_ADDR", "127.0.0.1:7071", "listen address of the console (no auth, keep it private)")
+	source.str(&config.ConsoleAddr, "console-addr", "WASIM_CONSOLE_ADDR", "127.0.0.1:7071", "listen address of the console, which asks for a login once a user exists (see wasim user)")
 	source.str(&config.PublicURL, "public-url", "WASIM_PUBLIC_URL", "http://localhost:7070", "base URL the consumer reaches the Graph API at, used in media and paging URLs")
 
 	source.str(&config.BusinessAccountID, "business-account-id", "WASIM_BUSINESS_ACCOUNT_ID", "200000000000001", "simulated WhatsApp Business Account id")
@@ -87,7 +93,7 @@ func Load(args []string, getenv func(string) string, output io.Writer) (Config, 
 	source.duration(&config.WebhookRetryBase, "webhook-retry-base", "WASIM_WEBHOOK_RETRY_BASE", time.Second, "first backoff delay, doubled on each attempt")
 	source.duration(&config.WebhookRetryLimit, "webhook-retry-limit", "WASIM_WEBHOOK_RETRY_LIMIT", 5*time.Minute, "longest backoff delay")
 
-	source.str(&config.DatabasePath, "db-path", "WASIM_DB_PATH", "./wasim.db", `SQLite file, or ":memory:" for state that resets on restart`)
+	source.str(&config.DatabasePath, "db-path", DatabasePathEnv, DefaultDatabasePath, `SQLite file, or ":memory:" for state that resets on restart`)
 	source.str(&config.MediaDir, "media-dir", "WASIM_MEDIA_DIR", "./wasim-media", "directory for media files")
 	source.str(&config.SeedFile, "seed-file", "WASIM_SEED_FILE", "", "JSON file with templates and contacts, empty uses the built-in seed")
 

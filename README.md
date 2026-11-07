@@ -150,7 +150,7 @@ Every setting is a flag or an environment variable, and the flag wins. See
 | Variable | Default | Description |
 |---|---|---|
 | `WASIM_GRAPH_ADDR` | `127.0.0.1:7070` | Listen address of the fake Graph API |
-| `WASIM_CONSOLE_ADDR` | `127.0.0.1:7071` | Listen address of the console |
+| `WASIM_CONSOLE_ADDR` | `127.0.0.1:7071` | Listen address of the console, which asks for a login once a [user exists](#console-login) |
 | `WASIM_PUBLIC_URL` | `http://localhost:7070` | Base URL your app reaches wasim at, used in media and paging URLs |
 | `WASIM_WEBHOOK_URL` | | Your webhook endpoint. Empty records webhooks without sending them |
 | `WASIM_APP_SECRET` | | Signing secret. Empty sends webhooks unsigned |
@@ -196,7 +196,47 @@ curl -s -X POST localhost:7071/api/contacts/15550000001/window/expire
 curl -s -X POST localhost:7071/api/reset
 ```
 
-Use `WASIM_DB_PATH=:memory:` to make each run start empty.
+Use `WASIM_DB_PATH=:memory:` to make each run start empty. If the console asks
+for a login, add the credentials of a console user with `-u`, as in
+`curl -u ana@example.com:PASSWORD ...`.
+
+## Console login
+
+The console is open to anyone who reaches it until you add a user. From then on
+it asks for a login:
+
+```sh
+wasim user add ana@example.com      # asks for the password twice
+wasim user passwd ana@example.com   # changes it and ends that user's sessions
+wasim user remove ana@example.com   # removes the user and ends their sessions
+wasim user list
+```
+
+Users live in the same SQLite file as everything else, so run the command with the
+same `--db-path` or `WASIM_DB_PATH` as the server. A running wasim picks the
+change up at once, without a restart, and `POST /api/reset` keeps the users. An
+in-memory database cannot hold users, because the command runs in a separate
+process.
+
+With Docker, run it inside the container, which already points at `/data/wasim.db`:
+
+```sh
+docker exec -it wasim /wasim user add ana@example.com
+```
+
+In a script, pipe the password and add `--password-stdin`:
+
+```sh
+echo "$CONSOLE_PASSWORD" | wasim user add ana@example.com --password-stdin
+```
+
+Browsers log in through a form and keep a session for 7 days or until wasim
+restarts. Scripts send HTTP Basic credentials on every request instead. The
+Graph API port is unaffected: it keeps its own bearer tokens
+(`WASIM_ACCESS_TOKENS`).
+
+Passwords are stored as salted PBKDF2-SHA256 hashes. See [`SECURITY.md`](SECURITY.md)
+for what the login does and does not protect.
 
 ## Compatibility
 
@@ -215,8 +255,6 @@ The ones most likely to matter:
   happen when you inject them.
 - Not emulated: sending media, uploads, reactions, audio, video, locations,
   Flows, calling, template management and `value.errors` webhooks.
-
-The console has no authentication. See [`SECURITY.md`](SECURITY.md).
 
 <details>
 <summary>More screenshots</summary>

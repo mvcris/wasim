@@ -9,6 +9,7 @@ involved.
 Usage:
 
 	wasim [flags]
+	wasim user add|passwd|remove|list [EMAIL] [--password-stdin] [--db-path PATH]
 
 Every flag has an environment variable, shown in brackets in `wasim --help`. A
 flag beats its variable, which beats the default. The most common ones:
@@ -29,6 +30,12 @@ Example:
 Then point the integration's Graph API base URL at http://localhost:7070 and
 open the console at http://localhost:7071.
 
-The console has no authentication. Keep it on localhost or a private network.
+The console is open to anyone who reaches it until a user exists. Add one to
+require a login, from the same database the server uses:
+
+	wasim user add ana@example.com
+
+Scripts that drive the console API then send the same credentials with HTTP
+Basic authentication, as in curl -u.
 */
 package main

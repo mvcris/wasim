@@ -8,7 +8,7 @@ import (
 
 func TestVersionFlagPrintsTheVersion(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	if err := run([]string{"--version"}, &stdout, &stderr); err != nil {
+	if err := run([]string{"--version"}, nil, &stdout, &stderr); err != nil {
 		t.Fatal(err)
 	}
 	if stdout.String() != version+"\n" {
@@ -18,7 +18,7 @@ func TestVersionFlagPrintsTheVersion(t *testing.T) {
 
 func TestHelpIsNotAnError(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	if err := run([]string{"--help"}, &stdout, &stderr); err != nil {
+	if err := run([]string{"--help"}, nil, &stdout, &stderr); err != nil {
 		t.Fatal(err)
 	}
 	for _, want := range []string{"-webhook-url", "WASIM_WEBHOOK_URL", "-console-addr"} {
@@ -30,7 +30,7 @@ func TestHelpIsNotAnError(t *testing.T) {
 
 func TestUnknownFlagsFail(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	if err := run([]string{"--no-such-flag"}, &stdout, &stderr); err == nil {
+	if err := run([]string{"--no-such-flag"}, nil, &stdout, &stderr); err == nil {
 		t.Fatal("an unknown flag was accepted")
 	}
 }
@@ -38,7 +38,7 @@ func TestUnknownFlagsFail(t *testing.T) {
 func TestInvalidEnvironmentFails(t *testing.T) {
 	t.Setenv("WASIM_WEBHOOK_WORKERS", "many")
 	var stdout, stderr bytes.Buffer
-	err := run(nil, &stdout, &stderr)
+	err := run(nil, nil, &stdout, &stderr)
 	if err == nil || !strings.Contains(err.Error(), "WASIM_WEBHOOK_WORKERS") {
 		t.Fatalf("error = %v", err)
 	}
@@ -47,7 +47,7 @@ func TestInvalidEnvironmentFails(t *testing.T) {
 func TestStartupFailuresAreReported(t *testing.T) {
 	t.Setenv("WASIM_SEED_FILE", t.TempDir()+"/missing.json")
 	var stdout, stderr bytes.Buffer
-	if err := run(nil, &stdout, &stderr); err == nil || !strings.Contains(err.Error(), "seed") {
+	if err := run(nil, nil, &stdout, &stderr); err == nil || !strings.Contains(err.Error(), "seed") {
 		t.Fatalf("error = %v", err)
 	}
 }

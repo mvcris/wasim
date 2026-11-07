@@ -50,6 +50,11 @@ async function api(path, options = {}) {
     init.body = JSON.stringify(options.body);
   }
   const response = await fetch(path, init);
+  // The session expired, was logged out elsewhere, or the user was removed.
+  if (response.status === 401) {
+    window.location.assign("/login");
+    throw new Error("Your session ended. Log in again.");
+  }
   const text = await response.text();
   const data = text ? JSON.parse(text) : null;
   if (!response.ok) {
@@ -512,6 +517,9 @@ function renderSetup() {
   $("failure-code").replaceChildren(
     ...state.errors.map((item) => el("option", { value: item.code }, `${item.code}: ${item.title}`)),
   );
+  $("current-user").textContent = info.user ?? "";
+  $("current-user").hidden = !info.user;
+  $("logout").hidden = !info.user;
 }
 
 function bindEvents() {
@@ -543,6 +551,13 @@ function bindEvents() {
     $("attachment-name").hidden = !file;
     $("attachment-name").textContent = file ? `Attached: ${file.name} (text below becomes the caption)` : "";
   });
+
+  $("logout").addEventListener("click", () =>
+    run(async () => {
+      await api("/api/logout", { method: "POST" });
+      window.location.assign("/login");
+    }),
+  );
 
   $("verify-webhook").addEventListener("click", () =>
     run(async () => {

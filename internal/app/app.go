@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/mvcris/wasim/internal/auth"
 	"github.com/mvcris/wasim/internal/config"
 	"github.com/mvcris/wasim/internal/console"
 	"github.com/mvcris/wasim/internal/events"
@@ -37,6 +38,7 @@ type App struct {
 	config     config.Config
 	store      *store.Store
 	dispatcher *webhook.Dispatcher
+	users      *auth.Users
 	logger     *slog.Logger
 }
 
@@ -88,7 +90,8 @@ func New(ctx context.Context, cfg config.Config, version string, logger *slog.Lo
 		return nil, err
 	}
 
-	consoleHandler, err := console.New(service, broker, version, logger)
+	users := auth.NewUsers(database)
+	consoleHandler, err := console.New(service, broker, auth.NewGuard(users), version, logger)
 	if err != nil {
 		_ = database.Close()
 		return nil, err
@@ -100,6 +103,7 @@ func New(ctx context.Context, cfg config.Config, version string, logger *slog.Lo
 		config:         cfg,
 		store:          database,
 		dispatcher:     dispatcher,
+		users:          users,
 		logger:         logger,
 	}, nil
 }
@@ -146,6 +150,7 @@ func (a *App) Run(ctx context.Context) error {
 	a.logger.Info("wasim is running",
 		"graph", listeners[0].Addr().String(),
 		"console", listeners[1].Addr().String(),
+		"console_login", a.consoleLogin(ctx),
 		"webhook_url", a.config.WebhookURL,
 	)
 
@@ -181,6 +186,23 @@ func (a *App) Run(ctx context.Context) error {
 	}
 	background.Wait()
 	return runErr
+}
+
+// consoleLogin describes the console's protection at startup. Users added
+// later with `wasim user add` apply without a restart. It reads the database
+// even when ctx is already canceled, so a quick shutdown stays clean, and a
+// failure only costs the log line.
+func (a *App) consoleLogin(ctx context.Context) string {
+	count, err := a.users.Count(context.WithoutCancel(ctx))
+	switch {
+	case err != nil:
+		a.logger.Warn("count console users", "error", err)
+		return "unknown"
+	case count == 0:
+		return "off (no users)"
+	default:
+		return "required"
+	}
 }
 
 func (a *App) newServer(ctx context.Context, addr string, handler http.Handler) *http.Server {

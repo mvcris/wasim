@@ -28,16 +28,28 @@ wasim plays both sides of Meta for one business account.
 | `internal/graphapi` | The HTTP API the consumer talks to. |
 | `internal/console` | The control API and the embedded browser UI. |
 | `internal/events` | The change signal behind the console's live updates. |
+| `internal/auth` | Console users, password hashing, sessions, and the check each console request goes through. |
 | `internal/app` | Wires everything into a process. Its tests run the whole process against a fake consumer. |
 | `internal/doccheck` | No code: its test enforces the godoc conventions. |
-| `cmd/wasim` | The command: flags, signals, exit codes. |
+| `cmd/wasim` | The command: flags, signals, exit codes, and `wasim user`. |
 | `e2e` | Playwright tests that drive the console in a real browser, and the README screenshots. |
 
 ## Decisions
 
 **Two ports.** The Graph API faces the consumer and the console faces a human.
-The console has no authentication, so it must be possible to expose one without
-the other.
+They are protected differently, the Graph API by bearer tokens as Meta's is and
+the console by user logins, so it must be possible to expose one without the
+other.
+
+**The console locks itself when a user exists.** There is no switch to forget:
+with no users it stays open, as a local tool should, and the first
+`wasim user add` protects it. Users live in the database, read on every
+request, so the command can run in another process, even another container,
+and a running instance picks the change up without a restart. Sessions live in
+memory and remember the password hash they were created under, so a password
+change or a removal ends them at once. Scripts send HTTP Basic credentials
+instead of keeping a cookie; a cache of verified passwords keeps the
+deliberately slow hash off every request.
 
 **Webhooks go through a persistent outbox.** A request writes its message and its
 webhooks in one transaction, and the dispatcher delivers them independently. That

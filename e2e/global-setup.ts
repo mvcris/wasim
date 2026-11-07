@@ -35,6 +35,9 @@ export default async function globalSetup(): Promise<() => Promise<void>> {
   const workDir = mkdtempSync(path.join(tmpdir(), "wasim-e2e-"));
   const binary = path.join(workDir, "wasim");
   execFileSync("go", ["build", "-o", binary, "./cmd/wasim"], { cwd: repoRoot, stdio: "inherit" });
+  // Workers inherit the environment, so a spec that needs its own instance,
+  // such as one with console users, can start it from the same build.
+  process.env.WASIM_E2E_BINARY = binary;
 
   const consumer = await startConsumer(port(consumerURL));
 

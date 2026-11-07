@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mvcris/wasim/internal/auth"
 	"github.com/mvcris/wasim/internal/cloudapi"
 	"github.com/mvcris/wasim/internal/console"
 	"github.com/mvcris/wasim/internal/domain"
@@ -30,6 +31,7 @@ type fixture struct {
 	server  *httptest.Server
 	service *sim.Service
 	broker  *events.Broker
+	users   *auth.Users
 	clock   time.Time
 }
 
@@ -56,11 +58,12 @@ func newFixture(t *testing.T) *fixture {
 	if err := service.ApplySeed(ctx); err != nil {
 		t.Fatal(err)
 	}
-	handler, err := console.New(service, broker, "v1.2.3", slog.New(slog.DiscardHandler))
+	users := auth.NewUsers(database)
+	handler, err := console.New(service, broker, auth.NewGuard(users), "v1.2.3", slog.New(slog.DiscardHandler))
 	if err != nil {
 		t.Fatal(err)
 	}
-	f := &fixture{t: t, service: service, broker: broker, clock: time.Now()}
+	f := &fixture{t: t, service: service, broker: broker, users: users, clock: time.Now()}
 	service.SetClock(func() time.Time { return f.clock })
 	f.server = httptest.NewServer(handler)
 	t.Cleanup(f.server.Close)

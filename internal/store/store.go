@@ -695,9 +695,109 @@ func scanDelivery(row scanner) (domain.Delivery, error) {
 	return delivery, nil
 }
 
-// Reset removes conversations, media records, rules and webhooks. Templates stay
-// because they describe the account rather than its activity. It returns the
-// media file paths, for the caller to remove once the transaction commits.
+// Console users.
+
+// User is a console login. The password hash is opaque to the store.
+type User struct {
+	Email        string
+	PasswordHash string
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+}
+
+// ErrUserExists reports an email that already belongs to a user.
+var ErrUserExists = errors.New("user already exists")
+
+// InsertUser adds a user, failing with ErrUserExists if the email is taken.
+func (q *Queries) InsertUser(ctx context.Context, user User) error {
+	result, err := q.db.ExecContext(ctx, `
+		INSERT INTO users (email, password_hash, created_at, updated_at) VALUES (?, ?, ?, ?)
+		ON CONFLICT (email) DO NOTHING`,
+		user.Email, user.PasswordHash, user.CreatedAt.UnixMilli(), user.UpdatedAt.UnixMilli())
+	if err != nil {
+		return fmt.Errorf("insert user: %w", err)
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return ErrUserExists
+	}
+	return nil
+}
+
+// GetUser returns one user.
+func (q *Queries) GetUser(ctx context.Context, email string) (User, error) {
+	row := q.db.QueryRowContext(ctx, `SELECT email, password_hash, created_at, updated_at FROM users WHERE email = ?`, email)
+	user, err := scanUser(row)
+	if errors.Is(err, sql.ErrNoRows) {
+		return User{}, domain.ErrNotFound
+	}
+	return user, err
+}
+
+// ListUsers returns every user, by email.
+func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
+	rows, err := q.db.QueryContext(ctx, `SELECT email, password_hash, created_at, updated_at FROM users ORDER BY email`)
+	if err != nil {
+		return nil, fmt.Errorf("list users: %w", err)
+	}
+	defer rows.Close()
+	users := []User{}
+	for rows.Next() {
+		user, err := scanUser(rows)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+	return users, rows.Err()
+}
+
+// CountUsers returns how many users exist.
+func (q *Queries) CountUsers(ctx context.Context) (int, error) {
+	var count int
+	if err := q.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM users`).Scan(&count); err != nil {
+		return 0, fmt.Errorf("count users: %w", err)
+	}
+	return count, nil
+}
+
+// UpdateUserPassword replaces a user's password hash.
+func (q *Queries) UpdateUserPassword(ctx context.Context, email, passwordHash string, now time.Time) error {
+	result, err := q.db.ExecContext(ctx, `UPDATE users SET password_hash = ?, updated_at = ? WHERE email = ?`,
+		passwordHash, now.UnixMilli(), email)
+	if err != nil {
+		return fmt.Errorf("update user: %w", err)
+	}
+	return requireRow(result)
+}
+
+// DeleteUser removes a user.
+func (q *Queries) DeleteUser(ctx context.Context, email string) error {
+	result, err := q.db.ExecContext(ctx, `DELETE FROM users WHERE email = ?`, email)
+	if err != nil {
+		return fmt.Errorf("delete user: %w", err)
+	}
+	return requireRow(result)
+}
+
+func scanUser(row scanner) (User, error) {
+	var user User
+	var created, updated int64
+	if err := row.Scan(&user.Email, &user.PasswordHash, &created, &updated); err != nil {
+		return User{}, err
+	}
+	user.CreatedAt = time.UnixMilli(created).UTC()
+	user.UpdatedAt = time.UnixMilli(updated).UTC()
+	return user, nil
+}
+
+// Reset removes conversations, media records, rules and webhooks. Templates and
+// console users stay because they describe the setup rather than its activity.
+// It returns the media file paths, for the caller to remove once the
+// transaction commits.
 func (q *Queries) Reset(ctx context.Context) ([]string, error) {
 	rows, err := q.db.QueryContext(ctx, `SELECT path FROM media`)
 	if err != nil {
